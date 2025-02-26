@@ -1054,6 +1054,31 @@ else
 fi
 AC_DEFINE_UNQUOTED([HAVE_IOPRIO_SYSCALL], [$HAVE_IOPRIO_SYSCALL], [Define to 1 if Linux ioprio syscalls are usable.])
 
+AC_MSG_CHECKING(for Windows file I/O priority functions)
+AC_COMPILE_IFELSE([
+  AC_LANG_PROGRAM([[
+    #define _WIN32_WINNT 0x0600
+    #include <windows.h>
+    #include <io.h>
+    #include <stdio.h>
+  ]],[[
+    static const FILE_IO_PRIORITY_HINT_INFO priorityHint = {
+        .PriorityHint = IoPriorityHintLow,
+    };
+    FILE * const F = fopen("test", "r");
+    HANDLE hFile = _get_osfhandle(_fileno(F));
+
+    SetFileInformationByHandle(hFile, FileIoPriorityHintInfo, &priorityHint, sizeof(priorityHint));
+  ]])
+],[
+  AC_MSG_RESULT([yes])
+  HAVE_WINDOWS_IOPRIO=1
+],[
+  AC_MSG_RESULT([no])
+  HAVE_WINDOWS_IOPRIO=0
+])
+AC_DEFINE_UNQUOTED([HAVE_WINDOWS_IOPRIO], [$HAVE_WINDOWS_IOPRIO], [Define to 1 if Windows file IO functions are usable.])
+
 dnl Check for different ways of gathering OS randomness
 AC_MSG_CHECKING([for Linux getrandom function])
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
